@@ -13,6 +13,7 @@ from . import __version__
 
 PROG = 'strip-exif'
 
+
 def process_image(filename: str | os.PathLike) -> bool:
     """
     Process image metadata.
@@ -35,7 +36,9 @@ def process_image(filename: str | os.PathLike) -> bool:
                 # Create a new image without any EXIF data
                 data = im.tobytes()
                 im_no_exif = Image.frombytes(im.mode, im.size, data)
-                im_no_exif.save(filename, quality=95, optimize=True)  # You can adjust the quality as needed
+                im_no_exif.save(
+                    filename, quality=95, optimize=True
+                )  # You can adjust the quality as needed
                 has_changed = True
     except (FileNotFoundError, UnidentifiedImageError):
         pass  # not an image or file not found
@@ -44,6 +47,7 @@ def process_image(filename: str | os.PathLike) -> bool:
         if platform.system() != 'Windows':
             try:
                 from xattr import xattr
+
                 xattr_obj = xattr(filename)
                 extended_attributes = xattr_obj.list()
                 if extended_attributes:
@@ -53,6 +57,7 @@ def process_image(filename: str | os.PathLike) -> bool:
                 pass  # Handling case where xattr is not installed or applicable
 
     return has_changed
+
 
 def main(argv: Sequence[str] | None = None) -> int:
     """
@@ -82,6 +87,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     results = [process_image(filename) for filename in args.filenames]
     return min(1, sum(results))
+
 
 if __name__ == '__main__':
     raise SystemExit(main())

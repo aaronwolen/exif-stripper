@@ -71,7 +71,10 @@ def assert_metadata_stripped(filepath, on_windows=RUNNING_ON_WINDOWS):
     assert not has_changed
 
 
-@pytest.mark.skipif(RUNNING_ON_WINDOWS or not XATTR_SUPPORTED, reason='xattr does not work on Windows or is not supported')
+@pytest.mark.skipif(
+    RUNNING_ON_WINDOWS or not XATTR_SUPPORTED,
+    reason='xattr does not work on Windows or is not supported',
+)
 def test_process_image_full(image_with_metadata, monkeypatch):
     """Test that cli.process_image() removes EXIF and extended attributes."""
     assert_metadata_stripped(image_with_metadata)
