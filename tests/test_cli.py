@@ -2,6 +2,8 @@
 
 import platform
 import subprocess
+import sys
+import tempfile
 
 import pytest
 from PIL import Image
@@ -12,6 +14,19 @@ RUNNING_ON_WINDOWS = platform.system() == 'Windows'
 
 if not RUNNING_ON_WINDOWS:
     from xattr import xattr
+
+
+def supports_xattr():
+    """Check if the filesystem supports xattr."""
+    try:
+        with tempfile.NamedTemporaryFile(delete=True) as tmp:
+            xattr(tmp.name).set('the.limit.does.not.exist', b'\x00')
+            return True
+    except (IOError, OSError):
+        return False
+
+
+XATTR_SUPPORTED = supports_xattr()
 
 
 @pytest.fixture
@@ -29,7 +44,8 @@ def image_with_exif_data(tmp_path):
 @pytest.fixture
 def image_with_metadata(image_with_exif_data):
     """Fixture for an image with metadata."""
-    xattr(image_with_exif_data).set('the.limit.does.not.exist', b'\x00')
+    if XATTR_SUPPORTED:
+        xattr(image_with_exif_data).set('the.limit.does.not.exist', b'\x00')
     return image_with_exif_data
 
 
@@ -37,7 +53,7 @@ def has_metadata(filepath, on_windows):
     """Utility to check if a file has metadata."""
     with Image.open(filepath) as im:
         has_exif = dict(im.getexif()) != {}
-        if on_windows:
+        if on_windows or not XATTR_SUPPORTED:
             return has_exif
         return has_exif or xattr(filepath).list()
 
@@ -55,7 +71,10 @@ def assert_metadata_stripped(filepath, on_windows=RUNNING_ON_WINDOWS):
     assert not has_changed
 
 
-@pytest.mark.skipif(RUNNING_ON_WINDOWS, reason='xattr does not work on Windows')
+@pytest.mark.skipif(
+    RUNNING_ON_WINDOWS or not XATTR_SUPPORTED,
+    reason='xattr does not work on Windows or is not supported',
+)
 def test_process_image_full(image_with_metadata, monkeypatch):
     """Test that cli.process_image() removes EXIF and extended attributes."""
     assert_metadata_stripped(image_with_metadata)
@@ -79,6 +98,7 @@ def test_process_image_file_issues(tmp_path, exists):
     assert not has_changed
 
 
+@pytest.mark.skipif(not XATTR_SUPPORTED, reason='Filesystem does not support xattr')
 def test_main(tmp_path, image_with_metadata):
     """Test that cli.main() returns the number of files altered."""
     file_without_metadata = tmp_path / 'clean.png'
@@ -97,9 +117,10 @@ def test_cli_version(capsys):
 
 
 @pytest.mark.parametrize(['flag', 'return_code'], [['--version', 0], ['', 1]])
+@pytest.mark.skipif(not XATTR_SUPPORTED, reason='Filesystem does not support xattr')
 def test_main_access_cli(flag, return_code, image_with_metadata):
     """Confirm that CLI can be accessed via python -m."""
     result = subprocess.run(
-        ['python', '-m', 'exif_stripper.cli', flag or str(image_with_metadata)]
+        [sys.executable, '-m', 'exif_stripper.cli', flag or str(image_with_metadata)]
     )
     assert result.returncode == return_code

@@ -8,6 +8,7 @@ dependencies = ["pillow", "xattr ; platform_system != 'Windows'"]
 requires-python = ">=3.8"
 authors = [
     {name = "Stefanie Molin", email = "24376333+stefmolin@users.noreply.github.com"},
+    {name = "Aaron Wolen", email = "aaron@wolen.com"}
 ]
 description = "Pre-commit hook to ensure image EXIF data is removed."
 readme = "README.md"
@@ -42,8 +43,8 @@ dev = [
 strip-exif = "exif_stripper.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/stefmolin/exif-stripper"
-Documentation = "https://github.com/stefmolin/exif-stripper"
+Homepage = "https://github.com/aaronwolen/exif-stripper"
+Documentation = "https://github.com/aaronwolen/exif-stripper"
 
 [tool.setuptools.packages.find]
 where = ["src"]

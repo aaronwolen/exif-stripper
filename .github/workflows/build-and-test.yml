@@ -1,0 +1,30 @@
+name: Python package
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python 3.x
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+    - name: Install prerequisites
+      run: |
+        python -m pip install --upgrade pip build
+    - name: Install the package (if required)
+      run: |
+        pip install -e ".[dev]"
+    - name: Build
+      run: python -m build
+    - name: Test with pytest
+      run: |
+        pytest --cov=exif_stripper --cov=tests --no-cov-on-fail --cov-report=term-missing
