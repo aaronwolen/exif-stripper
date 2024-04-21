@@ -43,8 +43,8 @@ dev = [
 strip-exif = "exif_stripper.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/stefmolin/exif-stripper"
-Documentation = "https://github.com/stefmolin/exif-stripper"
+Homepage = "https://github.com/aaronwolen/exif-stripper"
+Documentation = "https://github.com/aaronwolen/exif-stripper"
 
 [tool.setuptools.packages.find]
 where = ["src"]
