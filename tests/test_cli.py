@@ -20,7 +20,7 @@ def supports_xattr():
     """Check if the filesystem supports xattr."""
     try:
         with tempfile.NamedTemporaryFile(delete=True) as tmp:
-            xattr(tmp.name).set('user.test', b'test')
+            xattr(tmp.name).set('the.limit.does.not.exist', b'\x00')
             return True
     except (IOError, OSError):
         return False
