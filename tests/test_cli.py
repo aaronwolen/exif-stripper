@@ -49,13 +49,13 @@ def image_with_metadata(image_with_exif_data):
     return image_with_exif_data
 
 
-def has_metadata(filepath, on_windows):
+def has_metadata(filepath, on_windows) -> bool:
     """Utility to check if a file has metadata."""
     with Image.open(filepath) as im:
         has_exif = dict(im.getexif()) != {}
         if on_windows or not XATTR_SUPPORTED:
             return has_exif
-        return has_exif or xattr(filepath).list()
+        return has_exif or bool(xattr(filepath).list())
 
 
 def assert_metadata_stripped(filepath, on_windows=RUNNING_ON_WINDOWS):
