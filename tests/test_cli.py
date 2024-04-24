@@ -1,9 +1,12 @@
 """Test the CLI."""
 
+import os
 import platform
+import shutil
 import subprocess
 import sys
 import tempfile
+from pathlib import Path
 
 import pytest
 from PIL import Image
@@ -13,7 +16,32 @@ from exif_stripper import cli
 RUNNING_ON_WINDOWS = platform.system() == 'Windows'
 
 if not RUNNING_ON_WINDOWS:
-    from xattr import xattr
+    from xattr import setxattr, xattr
+
+
+def copy_with_extended_attributes(src, dst, extra_attributes=None):
+    """
+    Copy file with extended attributes
+
+    Copies extended attributes with xattr because shutil.copystat() fails to
+    preserve the 'com.apple.macl' attribute.
+
+    Parameters
+    ----------
+    src : str
+        Source file path.
+    dst : str
+        Destination file path.
+    extra_attributes : dict, optional
+        Extra attributes to add to the destination file, by default {}.
+    """
+    shutil.copy(src, dst)
+    attributes = xattr(src)
+    for attribute in attributes:
+        setxattr(dst, attribute, attributes[attribute])
+    if extra_attributes:
+        xattr(dst).update(extra_attributes or {})
+    return dst
 
 
 def supports_xattr():
@@ -27,6 +55,20 @@ def supports_xattr():
 
 
 XATTR_SUPPORTED = supports_xattr()
+
+
+@pytest.fixture
+def test_dir():
+    """
+    Fixture for a temp directory within the tests folder.
+
+    Required to reproduce the inability to remove the com.apple.macl attribute,
+    which behaves differently when the file is in a temp directory.
+    """
+    test_dir = Path(os.path.dirname(os.path.abspath(__file__))) / 'temp'
+    test_dir.mkdir(exist_ok=True)
+    yield test_dir
+    shutil.rmtree(test_dir)
 
 
 @pytest.fixture
@@ -47,6 +89,21 @@ def image_with_metadata(image_with_exif_data):
     if XATTR_SUPPORTED:
         xattr(image_with_exif_data).set('the.limit.does.not.exist', b'\x00')
     return image_with_exif_data
+
+
+@pytest.fixture
+def real_image_with_metadata(test_dir):
+    test_image_path = Path('tests/data/python-logo-master-v3-TM.png')
+
+    temp_image_path = test_dir / test_image_path.name
+    if temp_image_path.exists():
+        temp_image_path.unlink()
+
+    return copy_with_extended_attributes(
+        test_image_path,
+        temp_image_path,
+        extra_attributes={'the.limit.does.not.exist': b'\x00'},
+    )
 
 
 def has_metadata(filepath, on_windows) -> bool:
@@ -96,6 +153,11 @@ def test_process_image_file_issues(tmp_path, exists):
 
     has_changed = cli.process_image(file)
     assert not has_changed
+
+
+def test_real_image_with_metadata(real_image_with_metadata):
+    """Test that a real image with metadata is processed correctly."""
+    assert_metadata_stripped(real_image_with_metadata)
 
 
 @pytest.mark.skipif(not XATTR_SUPPORTED, reason='Filesystem does not support xattr')
