@@ -47,6 +47,8 @@ def copy_with_extended_attributes(src, dst, extra_attributes=None):
 
 def supports_xattr():
     """Check if the filesystem supports xattr."""
+    if RUNNING_ON_WINDOWS:
+        return False
     try:
         with tempfile.NamedTemporaryFile(delete=True) as tmp:
             xattr(tmp.name).set('the.limit.does.not.exist', b'\x00')
