@@ -112,7 +112,15 @@ def has_metadata(filepath, on_windows) -> bool:
         has_exif = dict(im.getexif()) != {}
         if on_windows or not XATTR_SUPPORTED:
             return has_exif
-        return has_exif or bool(xattr(filepath).list())
+        # Ignore the protected 'com.apple.macl' attribute
+        xattr_keys = xattr(filepath).list()
+        try:
+            index = xattr_keys.index('com.apple.macl')
+        except ValueError:
+            pass
+        else:
+            xattr_keys.pop(index)
+        return has_exif or bool(xattr_keys)
 
 
 def assert_metadata_stripped(filepath, on_windows=RUNNING_ON_WINDOWS):
