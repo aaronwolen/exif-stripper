@@ -50,6 +50,12 @@ def process_image(filename: str | os.PathLike) -> bool:
 
                 xattr_obj = xattr(filename)
                 extended_attributes = xattr_obj.list()
+
+                if 'com.apple.macl' in extended_attributes:
+                    index = extended_attributes.index('com.apple.macl')
+                    print(f'...index: {index}')
+                    extended_attributes.pop(index)
+
                 if extended_attributes:
                     xattr_obj.clear()
                     has_changed = True
