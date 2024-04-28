@@ -94,6 +94,7 @@ def image_with_metadata(image_with_exif_data):
 
 @pytest.fixture
 def real_image_with_metadata(test_dir):
+    """Image with com.apple.macl attribute and GPS EXIF data."""
     test_image_path = Path('tests/data/python-logo-master-v3-TM.png')
 
     temp_image_path = test_dir / test_image_path.name
