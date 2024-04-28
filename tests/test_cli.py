@@ -36,11 +36,12 @@ def copy_with_extended_attributes(src, dst, extra_attributes=None):
         Extra attributes to add to the destination file, by default {}.
     """
     shutil.copy(src, dst)
-    attributes = xattr(src)
-    for attribute in attributes:
-        setxattr(dst, attribute, attributes[attribute])
-    if extra_attributes:
-        xattr(dst).update(extra_attributes or {})
+    if XATTR_SUPPORTED:
+        attributes = xattr(src)
+        for attribute in attributes:
+            setxattr(dst, attribute, attributes[attribute])
+        if extra_attributes:
+            xattr(dst).update(extra_attributes or {})
     return dst
 
 
